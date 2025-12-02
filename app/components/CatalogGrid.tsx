@@ -52,35 +52,33 @@ export default function CatalogGrid() {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
+    <div className="flex flex-col w-full">
       {items.map((item) => {
         const imageUrl = getImageUrl(item);
         return (
           <div
             key={item.id}
-            className="bg-white rounded-lg shadow-md overflow-hidden border border-[#a3d177] hover:shadow-lg transition-shadow"
+            className="flex flex-col w-full mb-12 md:mb-16"
           >
             {imageUrl ? (
               <img
                 src={imageUrl}
                 alt={item.title}
-                className="w-full h-64 object-cover"
+                className="w-full h-64 md:h-80 lg:h-96 object-cover mb-4"
               />
             ) : (
-              <div className="w-full h-64 bg-gray-200 flex items-center justify-center">
+              <div className="w-full h-64 md:h-80 lg:h-96 bg-gray-200 flex items-center justify-center mb-4">
                 <span className="text-gray-400">بدون تصویر</span>
               </div>
             )}
-            <div className="p-4">
-              <h3 className="text-xl font-bold text-[#253614] mb-2">
-                {item.title}
-              </h3>
-              {item.description && (
-                <p className="text-gray-600 text-sm line-clamp-3">
-                  {item.description}
-                </p>
-              )}
-            </div>
+            <h3 className="text-xl md:text-2xl font-semibold text-[#253614] mb-3 px-6">
+              {item.title}
+            </h3>
+            {item.description && (
+              <p className="text-gray-600 text-sm md:text-base leading-relaxed px-6">
+                {item.description}
+              </p>
+            )}
           </div>
         );
       })}
