@@ -19,7 +19,7 @@ export async function POST(req: Request) {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      maxAge: 60 * 15, // 15 minutes (same as token expiry)
+      maxAge: 60 * 15 * 24 * 7, // 7 days
       path: "/",
     });
 
@@ -28,7 +28,7 @@ export async function POST(req: Request) {
       httpOnly: false,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      maxAge: 60 * 15, // 15 minutes
+      maxAge: 60 * 15 * 24 * 7 , // 7 days
       path: "/",
     });
 
@@ -37,7 +37,7 @@ export async function POST(req: Request) {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 7, // 7 days
+      maxAge: 60 * 60 * 24 * 20, // 20 days
       path: "/",
     });
 
