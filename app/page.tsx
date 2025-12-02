@@ -1,6 +1,25 @@
+"use client";
 import Image from "next/image";
+import { useState } from "react";
 
 export default function Home() {
+  const [status, setStatus] = useState<string | null>(null);
+  const [result, setResult] = useState<string | null>(null);
+
+  async function handleCheckDb() {
+    try {
+      setStatus("Checking...");
+      const res = await fetch("/api/db-status");
+      const data = await res.json();
+      setResult(JSON.stringify(data));
+      setStatus(data.ok ? "Connected" : "Not connected");
+      console.log("DB status result:", data);
+    } catch (err) {
+      setStatus("Error");
+      setResult(String(err));
+      console.error("Failed to fetch DB status", err);
+    }
+  }
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
       <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
@@ -58,6 +77,20 @@ export default function Home() {
           >
             Documentation
           </a>
+        </div>
+        <div className="mt-6 w-full flex flex-col items-center">
+          <button
+            onClick={handleCheckDb}
+            className="rounded bg-sky-600 px-4 py-2 text-white"
+          >
+            Check DB Connection
+          </button>
+          {status && <div className="mt-3 text-sm">Status: {status}</div>}
+          {result && (
+            <pre className="mt-2 max-w-full overflow-auto text-xs">
+              {result}
+            </pre>
+          )}
         </div>
       </main>
     </div>
