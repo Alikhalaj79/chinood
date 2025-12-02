@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getCatalogById } from "../../../lib/catalog";
 import { verifyRequestAuth } from "../../../lib/server-auth";
 import CatalogItemModel from "../../../lib/models/CatalogItem";
+import { connectDB } from "../../../lib/db";
 
 export async function GET(
   _req: Request,
@@ -24,6 +25,9 @@ export async function PUT(
 ) {
   try {
     const { id } = await params;
+    
+    // Ensure database connection
+    await connectDB();
     
     // Check authentication from cookie or header
     const auth = await verifyRequestAuth(req);
@@ -89,6 +93,9 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
+    
+    // Ensure database connection
+    await connectDB();
     
     // Check authentication from cookie or header
     const auth = await verifyRequestAuth(req);

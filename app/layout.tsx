@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import Header from "./components/Header";
 
 export const metadata: Metadata = {
   title: "پردیس گستر چینود",
@@ -20,6 +21,7 @@ export default function RootLayout({
         />
       </head>
       <body className="antialiased font-vazir">
+        <Header />
         {children}
       </body>
     </html>

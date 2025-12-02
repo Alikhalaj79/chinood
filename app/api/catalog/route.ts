@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getCatalog } from "../../lib/catalog";
 import { verifyRequestAuth } from "../../lib/server-auth";
 import CatalogItemModel from "../../lib/models/CatalogItem";
+import { connectDB } from "../../lib/db";
 
 export async function GET() {
   try {
@@ -15,6 +16,9 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
+    // Ensure database connection
+    await connectDB();
+    
     // Check authentication from cookie or header
     const auth = await verifyRequestAuth(req);
     if (!auth.valid) {
