@@ -23,10 +23,11 @@ const openapiSpec = {
         properties: {
           id: { type: "string" },
           title: { type: "string" },
-          price: { type: "number" },
+          description: { type: "string", nullable: true },
           image: { type: "string", nullable: true },
+          imageMimeType: { type: "string", nullable: true },
         },
-        required: ["id", "title", "price"],
+        required: ["id", "title"],
       },
       TokenResponse: {
         type: "object",
@@ -77,11 +78,10 @@ const openapiSpec = {
         type: "object",
         properties: {
           title: { type: "string" },
-          price: { type: "number" },
-          image: { type: "string" },
           description: { type: "string", nullable: true },
+          image: { type: "string", format: "binary", description: "Image file (JPEG, PNG, or WebP, max 5MB)" },
         },
-        required: ["title", "price"],
+        required: ["title"],
       },
     },
   },
@@ -109,7 +109,7 @@ const openapiSpec = {
         requestBody: {
           required: true,
           content: {
-            "application/json": {
+            "multipart/form-data": {
               schema: { $ref: "#/components/schemas/CreateCatalogItem" },
             },
           },
@@ -145,7 +145,7 @@ const openapiSpec = {
         requestBody: {
           required: true,
           content: {
-            "application/json": {
+            "multipart/form-data": {
               schema: { $ref: "#/components/schemas/CreateCatalogItem" },
             },
           },

@@ -31,12 +31,47 @@ export async function PUT(
       return new NextResponse("Forbidden", { status: 403 });
     }
 
-    const body = await req.json();
-    const { title, price, image, description } = body;
+    const formData = await req.formData();
+    const title = formData.get("title") as string;
+    const description = formData.get("description") as string | null;
+    const imageFile = formData.get("image") as File | null;
+    const removeImage = formData.get("removeImage") === "true";
+
+    if (!title || title.trim() === "") {
+      return new NextResponse("عنوان الزامی است", { status: 400 });
+    }
+
+    const updateData: any = {
+      title: title.trim(),
+      description: description?.trim() || undefined,
+    };
+
+    if (removeImage) {
+      updateData.image = undefined;
+      updateData.imageMimeType = undefined;
+    } else if (imageFile && imageFile.size > 0) {
+      // Validate file type
+      const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+      if (!allowedTypes.includes(imageFile.type)) {
+        return new NextResponse("فرمت تصویر باید jpeg، png یا webp باشد", { status: 400 });
+      }
+
+      // Validate file size (max 5MB)
+      const maxSize = 5 * 1024 * 1024; // 5MB
+      if (imageFile.size > maxSize) {
+        return new NextResponse("حجم تصویر نباید بیشتر از 5 مگابایت باشد", { status: 400 });
+      }
+
+      // Convert file to base64
+      const arrayBuffer = await imageFile.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+      updateData.image = buffer.toString("base64");
+      updateData.imageMimeType = imageFile.type;
+    }
     
     const item = await CatalogItemModel.findByIdAndUpdate(
       id,
-      { title, price, image, description },
+      updateData,
       { new: true }
     );
     

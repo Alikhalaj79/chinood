@@ -55,6 +55,43 @@ export function clearTokens(): void {
 }
 
 /**
+ * Decode JWT token without verification (client-side only, for checking expiry)
+ */
+function decodeToken(token: string): { exp?: number } | null {
+  try {
+    const base64Url = token.split(".")[1];
+    if (!base64Url) return null;
+    const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split("")
+        .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+        .join("")
+    );
+    return JSON.parse(jsonPayload);
+  } catch (error) {
+    return null;
+  }
+}
+
+/**
+ * Check if access token is expired or about to expire (within 1 minute)
+ */
+export function isTokenExpiredOrExpiringSoon(token: string | null): boolean {
+  if (!token) return true;
+
+  const decoded = decodeToken(token);
+  if (!decoded || !decoded.exp) return true;
+
+  const expiryTime = decoded.exp * 1000; // Convert to milliseconds
+  const now = Date.now();
+  const oneMinute = 60 * 1000; // 1 minute in milliseconds
+
+  // Token is expired or will expire within 1 minute
+  return expiryTime <= now + oneMinute;
+}
+
+/**
  * Refresh access token using refresh token
  * Returns new tokens or null if refresh failed
  */
@@ -63,18 +100,23 @@ export async function refreshAccessToken(): Promise<{
   refreshToken: string;
 } | null> {
   try {
+    console.log("Attempting to refresh access token...");
+    // Refresh token is in httpOnly cookie, so we don't need to send it in body
+    // credentials: "include" will automatically send the refreshToken cookie
     const res = await fetch("/api/auth/refresh", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include", // Important for cookies
+      credentials: "include", // Important: sends refreshToken cookie automatically
     });
 
     if (!res.ok) {
+      const errorText = await res.text();
+      console.error("Refresh token failed:", res.status, errorText);
       clearTokens();
       return null;
     }
 
     const { accessToken, refreshToken: newRefreshToken } = await res.json();
+    console.log("Token refresh successful");
     // Tokens are set in cookies by server, but we also update client cookie
     setTokens(accessToken, newRefreshToken);
     return { accessToken, refreshToken: newRefreshToken };
@@ -86,13 +128,47 @@ export async function refreshAccessToken(): Promise<{
 }
 
 /**
- * Fetch with automatic token refresh on 401
+ * Ensure we have a valid access token, refreshing if needed
+ * This should be called when the page loads or when access token is missing
+ */
+export async function ensureValidAccessToken(): Promise<string | null> {
+  const accessToken = getAccessToken();
+
+  // If we don't have a token or it's expired, try to refresh
+  if (isTokenExpiredOrExpiringSoon(accessToken)) {
+    const newTokens = await refreshAccessToken();
+    if (newTokens) {
+      return newTokens.accessToken;
+    }
+    return null;
+  }
+
+  return accessToken;
+}
+
+/**
+ * Fetch with automatic token refresh on expiry or 401
  */
 export async function authenticatedFetch(
   url: string,
   options: RequestInit = {}
 ): Promise<Response> {
   let accessToken = getAccessToken();
+
+  // Check if token is expired or about to expire, refresh proactively
+  if (isTokenExpiredOrExpiringSoon(accessToken)) {
+    const newTokens = await refreshAccessToken();
+    if (newTokens) {
+      accessToken = newTokens.accessToken;
+    } else {
+      // Refresh failed, redirect to login
+      if (typeof window !== "undefined") {
+        window.location.href = "/login";
+        // Return a rejected promise to prevent further execution
+        return Promise.reject(new Error("Authentication failed"));
+      }
+    }
+  }
 
   // Add authorization header and include credentials for cookies
   const headers = {
@@ -106,7 +182,7 @@ export async function authenticatedFetch(
     credentials: "include", // Important for cookies
   });
 
-  // If 401, try to refresh token and retry once
+  // If 401, try to refresh token and retry once (fallback)
   if (response.status === 401) {
     const newTokens = await refreshAccessToken();
     if (newTokens) {

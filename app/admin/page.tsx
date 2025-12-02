@@ -1,21 +1,30 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { authenticatedFetch, getAccessToken } from "../lib/client-auth";
+import { authenticatedFetch } from "../lib/client-auth";
+import { useAutoRefreshToken } from "../lib/hooks/useAutoRefreshToken";
 
 export default function AdminDashboard() {
   const [title, setTitle] = useState("");
-  const [price, setPrice] = useState<number | "">("");
-  const [image, setImage] = useState("");
+  const [description, setDescription] = useState("");
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
+  // Auto-refresh token when needed
+  useAutoRefreshToken();
+
   // Check authentication on mount
   useEffect(() => {
     const checkAuth = async () => {
-      const token = getAccessToken();
+      // First, try to ensure we have a valid access token (will refresh if needed)
+      const { ensureValidAccessToken } = await import("../lib/client-auth");
+      const token = await ensureValidAccessToken();
+
       if (!token) {
+        // No token available even after refresh attempt, redirect to login
         window.location.href = "/login";
         return;
       }
@@ -63,31 +72,78 @@ export default function AdminDashboard() {
     return null; // Will redirect
   }
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file type
+      const allowedTypes = [
+        "image/jpeg",
+        "image/jpg",
+        "image/png",
+        "image/webp",
+      ];
+      if (!allowedTypes.includes(file.type)) {
+        setMessage("فرمت تصویر باید jpeg، png یا webp باشد");
+        return;
+      }
+
+      // Validate file size (max 5MB)
+      const maxSize = 5 * 1024 * 1024; // 5MB
+      if (file.size > maxSize) {
+        setMessage("حجم تصویر نباید بیشتر از 5 مگابایت باشد");
+        return;
+      }
+
+      setImageFile(file);
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setMessage(null);
     setLoading(true);
+
     try {
+      const formData = new FormData();
+      formData.append("title", title);
+      if (description.trim()) {
+        formData.append("description", description);
+      }
+      if (imageFile) {
+        formData.append("image", imageFile);
+      }
+
       const res = await authenticatedFetch("/api/catalog", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ title, price: Number(price), image }),
+        body: formData,
       });
+
       if (!res.ok) {
         const txt = await res.text();
-        setMessage(txt || "Failed");
+        setMessage(txt || "خطا در ایجاد آیتم");
         return;
       }
-      setMessage("Created.");
+
+      setMessage("آیتم با موفقیت ایجاد شد");
       // Reset form
       setTitle("");
-      setPrice("");
-      setImage("");
+      setDescription("");
+      setImageFile(null);
+      setImagePreview(null);
+      // Reset file input
+      const fileInput = document.getElementById(
+        "image-input"
+      ) as HTMLInputElement;
+      if (fileInput) fileInput.value = "";
     } catch (err) {
       console.error(err);
-      setMessage("Error creating item");
+      setMessage("خطا در ایجاد آیتم");
     } finally {
       setLoading(false);
     }
@@ -115,6 +171,7 @@ export default function AdminDashboard() {
                 عنوان
               </label>
               <input
+                type="text"
                 className="w-full px-4 py-2 border border-[#a3d177] rounded-lg focus:ring-2 focus:ring-[#a3d177] focus:border-[#497321] outline-none transition-all bg-white text-gray-900"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
@@ -123,25 +180,36 @@ export default function AdminDashboard() {
             </div>
             <div>
               <label className="block text-sm font-medium mb-2 text-[#497321]">
-                قیمت
+                توضیحات
               </label>
-              <input
-                type="number"
-                className="w-full px-4 py-2 border border-[#a3d177] rounded-lg focus:ring-2 focus:ring-[#a3d177] focus:border-[#497321] outline-none transition-all bg-white text-gray-900"
-                value={price === "" ? "" : price}
-                onChange={(e) => setPrice(Number(e.target.value))}
-                required
+              <textarea
+                className="w-full px-4 py-2 border border-[#a3d177] rounded-lg focus:ring-2 focus:ring-[#a3d177] focus:border-[#497321] outline-none transition-all bg-white text-gray-900 min-h-[100px] resize-y"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="توضیحات آیتم را وارد کنید..."
               />
             </div>
             <div>
               <label className="block text-sm font-medium mb-2 text-[#497321]">
-                URL تصویر
+                تصویر
               </label>
               <input
-                className="w-full px-4 py-2 border border-[#a3d177] rounded-lg focus:ring-2 focus:ring-[#a3d177] focus:border-[#497321] outline-none transition-all bg-white text-gray-900"
-                value={image}
-                onChange={(e) => setImage(e.target.value)}
+                id="image-input"
+                type="file"
+                accept="image/jpeg,image/jpg,image/png,image/webp"
+                className="w-full px-4 py-2 border border-[#a3d177] rounded-lg focus:ring-2 focus:ring-[#a3d177] focus:border-[#497321] outline-none transition-all bg-white text-gray-900 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-[#a3d177] file:text-white hover:file:bg-[#497321] file:cursor-pointer"
+                onChange={handleImageChange}
               />
+              {imagePreview && (
+                <div className="mt-4">
+                  <p className="text-sm text-gray-600 mb-2">پیش‌نمایش تصویر:</p>
+                  <img
+                    src={imagePreview}
+                    alt="Preview"
+                    className="max-w-full h-48 object-cover rounded-lg border border-[#a3d177]"
+                  />
+                </div>
+              )}
             </div>
             {message && (
               <div className="p-3 border border-[#a3d177] rounded-lg bg-[#f0f9f0] text-[#497321]">

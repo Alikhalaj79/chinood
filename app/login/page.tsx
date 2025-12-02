@@ -1,21 +1,49 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { getAccessToken } from "../lib/client-auth";
+import { getAccessToken, ensureValidAccessToken } from "../lib/client-auth";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [checkingToken, setCheckingToken] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
 
-  // Redirect if already logged in
+  // Check if user is already logged in or has valid refresh token
   useEffect(() => {
-    const token = getAccessToken();
-    if (token) {
-      window.location.href = "/admin";
-    }
+    const checkAuth = async () => {
+      try {
+        // First check if we have a valid access token
+        let token = getAccessToken();
+
+        // If no token or expired, try to refresh using refreshToken from cookie
+        if (!token) {
+          console.log("No access token found, attempting to refresh...");
+          token = await ensureValidAccessToken();
+        } else {
+          // Token exists, verify it's still valid by trying to refresh if needed
+          token = await ensureValidAccessToken();
+        }
+
+        // If we got a valid token (either existing or refreshed), redirect to admin
+        if (token) {
+          console.log("Valid token found, redirecting to admin...");
+          window.location.href = "/admin";
+          return;
+        }
+
+        // No valid token, show login form
+        console.log("No valid token available, showing login form");
+        setCheckingToken(false);
+      } catch (err) {
+        console.error("Error checking auth:", err);
+        setCheckingToken(false);
+      }
+    };
+
+    checkAuth();
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -54,6 +82,18 @@ export default function LoginPage() {
       setLoading(false);
     }
   };
+
+  // Show loading state while checking token
+  if (checkingToken) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#f0f9f0] to-white px-4">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#497321] mb-4"></div>
+          <p className="text-[#497321]">در حال بررسی...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#f0f9f0] to-white px-4">

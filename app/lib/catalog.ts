@@ -4,12 +4,13 @@ import { CatalogDTO } from "./types";
 
 export async function getCatalog(): Promise<CatalogDTO[]> {
   await connectDB();
-  const docs = await CatalogItemModel.find({}).lean();
+  const docs = await CatalogItemModel.find({}).sort({ createdAt: -1 }).lean();
   return docs.map((d: any) => ({
     id: d._id.toString(),
     title: d.title,
-    price: d.price,
+    description: d.description,
     image: d.image,
+    imageMimeType: d.imageMimeType,
   }));
 }
 
@@ -20,8 +21,9 @@ export async function getCatalogById(id: string): Promise<CatalogDTO | null> {
   return {
     id: d._id.toString(),
     title: d.title,
-    price: d.price,
+    description: d.description,
     image: d.image,
+    imageMimeType: d.imageMimeType,
   };
 }
 

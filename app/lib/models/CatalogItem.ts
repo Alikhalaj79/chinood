@@ -3,16 +3,16 @@ import mongoose, { Schema, Document } from "mongoose";
 export interface ICatalogItem extends Document {
   title: string;
   description?: string;
-  price: number;
   image?: string;
+  imageMimeType?: string;
   createdAt?: Date;
 }
 
 const CatalogItemSchema = new Schema<ICatalogItem>({
   title: { type: String, required: true },
   description: { type: String },
-  price: { type: Number, required: true },
-  image: { type: String },
+  image: { type: String }, // base64 encoded image
+  imageMimeType: { type: String }, // e.g., "image/jpeg", "image/png"
   createdAt: { type: Date, default: Date.now },
 });
 
