@@ -39,6 +39,8 @@ export default function AdminDashboard() {
   const [currentPage, setCurrentPage] = useState(1);
   const [removeImage, setRemoveImage] = useState(false);
   const [hasOriginalImage, setHasOriginalImage] = useState(false);
+  const [cardDirection, setCardDirection] = useState<"top-to-bottom" | "bottom-to-top">("top-to-bottom");
+  const [loadingSettings, setLoadingSettings] = useState(false);
 
   // Auto-refresh token when needed
   useAutoRefreshToken();
@@ -81,6 +83,24 @@ export default function AdminDashboard() {
     checkAuth();
   }, []);
 
+  // Load settings
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const res = await fetch("/api/settings");
+        if (res.ok) {
+          const data = await res.json();
+          setCardDirection(data.cardDirection || "top-to-bottom");
+        }
+      } catch (err) {
+        console.error("Failed to load settings", err);
+      }
+    };
+    if (isAuthenticated) {
+      fetchSettings();
+    }
+  }, [isAuthenticated]);
+
   // Load items
   useEffect(() => {
     const fetchItems = async () => {
@@ -105,14 +125,28 @@ export default function AdminDashboard() {
 
   // Filter items based on search query
   const filteredItems = useMemo(() => {
-    if (!searchQuery.trim()) return items;
-    const query = searchQuery.toLowerCase().trim();
-    return items.filter(
-      (item) =>
-        item.title.toLowerCase().includes(query) ||
-        item.description?.toLowerCase().includes(query)
-    );
-  }, [items, searchQuery]);
+    let result = items;
+    
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      result = items.filter(
+        (item) =>
+          item.title.toLowerCase().includes(query) ||
+          item.description?.toLowerCase().includes(query)
+      );
+    }
+    
+    // Apply card direction (sort by creation date)
+    // API returns items sorted by createdAt: -1 (newest first)
+    // top-to-bottom: newest first (keep as is)
+    // bottom-to-top: oldest first (reverse)
+    if (cardDirection === "bottom-to-top") {
+      result = [...result].reverse();
+    }
+    
+    return result;
+  }, [items, searchQuery, cardDirection]);
 
   // Reset to page 1 when search query changes
   useEffect(() => {
@@ -144,6 +178,36 @@ export default function AdminDashboard() {
     } catch (err) {
       console.error("Logout failed:", err);
       window.location.href = "/login";
+    }
+  };
+
+  const handleCardDirectionChange = async (direction: "top-to-bottom" | "bottom-to-top") => {
+    if (loadingSettings) return; // Prevent multiple simultaneous requests
+    
+    setLoadingSettings(true);
+    try {
+      const res = await authenticatedFetch("/api/settings", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ cardDirection: direction }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setCardDirection(data.cardDirection || direction);
+        showToast("جهت نمایش کارت‌ها با موفقیت تغییر کرد", "success");
+      } else {
+        const errorText = await res.text();
+        console.error("Failed to update card direction:", errorText);
+        showToast("خطا در تغییر جهت نمایش", "error");
+      }
+    } catch (err) {
+      console.error("Failed to update card direction", err);
+      showToast("خطا در تغییر جهت نمایش", "error");
+    } finally {
+      setLoadingSettings(false);
     }
   };
 
@@ -627,7 +691,7 @@ export default function AdminDashboard() {
               )}
             </h2>
             {items.length > 0 && (
-              <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+              <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto items-start sm:items-center">
                 {/* Search Input */}
                 <input
                   type="text"
@@ -658,6 +722,40 @@ export default function AdminDashboard() {
                   <span className="text-sm text-gray-600 font-medium whitespace-nowrap">
                     در هر صفحه
                   </span>
+                </div>
+                {/* Card Direction Selector */}
+                <div className="flex items-center gap-2">
+                  <label className="text-sm text-gray-600 font-medium whitespace-nowrap">
+                    ترتیب نمایش:
+                  </label>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleCardDirectionChange("top-to-bottom")}
+                      disabled={loadingSettings}
+                      className={`px-3 py-2 border-2 rounded-lg transition-all text-sm font-medium whitespace-nowrap ${
+                        cardDirection === "top-to-bottom"
+                          ? "border-[#497321] bg-[#f0f9f0] text-[#497321] shadow-sm"
+                          : "border-[#a3d177] hover:border-[#497321] text-gray-700 bg-white"
+                      } ${loadingSettings ? "opacity-50 cursor-not-allowed" : ""}`}
+                      title="جدیدترین کارت‌ها در بالا"
+                    >
+                      ⬇️ جدیدترین
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleCardDirectionChange("bottom-to-top")}
+                      disabled={loadingSettings}
+                      className={`px-3 py-2 border-2 rounded-lg transition-all text-sm font-medium whitespace-nowrap ${
+                        cardDirection === "bottom-to-top"
+                          ? "border-[#497321] bg-[#f0f9f0] text-[#497321] shadow-sm"
+                          : "border-[#a3d177] hover:border-[#497321] text-gray-700 bg-white"
+                      } ${loadingSettings ? "opacity-50 cursor-not-allowed" : ""}`}
+                      title="قدیمی‌ترین کارت‌ها در بالا"
+                    >
+                      ⬆️ قدیمی‌ترین
+                    </button>
+                  </div>
                 </div>
               </div>
             )}

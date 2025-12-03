@@ -9,10 +9,11 @@ export async function GET() {
     await connectDB();
     let settings = await Settings.findOne();
     if (!settings) {
-      settings = await Settings.create({ catalogViewType: "list" });
+      settings = await Settings.create({ catalogViewType: "list", cardDirection: "top-to-bottom" });
     }
     return NextResponse.json({ 
-      catalogViewType: settings.catalogViewType 
+      catalogViewType: settings.catalogViewType,
+      cardDirection: settings.cardDirection || "top-to-bottom"
     });
   } catch (err) {
     console.error("GET /api/settings error", err);
@@ -31,23 +32,28 @@ export async function PUT(req: Request) {
     }
 
     const body = await req.json();
-    const { catalogViewType } = body;
-
-    if (!catalogViewType || !["grid", "list", "card"].includes(catalogViewType)) {
-      return new NextResponse("Invalid view type", { status: 400 });
-    }
+    const { catalogViewType, cardDirection } = body;
 
     let settings = await Settings.findOne();
     if (!settings) {
-      settings = await Settings.create({ catalogViewType });
+      settings = await Settings.create({ 
+        catalogViewType: catalogViewType || "list",
+        cardDirection: cardDirection || "top-to-bottom"
+      });
     } else {
-      settings.catalogViewType = catalogViewType;
+      if (catalogViewType && ["grid", "list", "card"].includes(catalogViewType)) {
+        settings.catalogViewType = catalogViewType;
+      }
+      if (cardDirection && ["top-to-bottom", "bottom-to-top"].includes(cardDirection)) {
+        settings.cardDirection = cardDirection;
+      }
       settings.updatedAt = new Date();
       await settings.save();
     }
 
     return NextResponse.json({ 
-      catalogViewType: settings.catalogViewType 
+      catalogViewType: settings.catalogViewType,
+      cardDirection: settings.cardDirection || "top-to-bottom"
     });
   } catch (err) {
     console.error("PUT /api/settings error", err);

@@ -11,6 +11,22 @@ export default function CatalogGrid() {
   const [items, setItems] = useState<CatalogDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [cardDirection, setCardDirection] = useState<"top-to-bottom" | "bottom-to-top">("top-to-bottom");
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const res = await fetch("/api/settings");
+        if (res.ok) {
+          const data = await res.json();
+          setCardDirection(data.cardDirection || "top-to-bottom");
+        }
+      } catch (err) {
+        console.error("Failed to load settings", err);
+      }
+    };
+    fetchSettings();
+  }, []);
 
   useEffect(() => {
     const fetchItems = async () => {
@@ -36,6 +52,23 @@ export default function CatalogGrid() {
       }
     };
     fetchItems();
+  }, []);
+
+  // Poll for settings changes every 2 seconds to reflect admin panel changes
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch("/api/settings");
+        if (res.ok) {
+          const data = await res.json();
+          setCardDirection(data.cardDirection || "top-to-bottom");
+        }
+      } catch (err) {
+        console.error("Failed to load settings", err);
+      }
+    }, 2000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const getImageUrl = (item: CatalogDTO) => {
@@ -90,9 +123,12 @@ export default function CatalogGrid() {
     );
   }
 
+  // Apply card direction
+  const displayedItems = cardDirection === "bottom-to-top" ? [...items].reverse() : items;
+
   return (
     <div className="flex flex-col w-full gap-8 md:gap-12">
-      {items.map((item, index) => (
+      {displayedItems.map((item, index) => (
         <div
           key={item.id}
           className="w-full animate-fade-in-up"

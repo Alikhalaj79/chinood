@@ -2,6 +2,7 @@ import mongoose, { Schema, Document } from "mongoose";
 
 export interface ISettings extends Document {
   catalogViewType: "grid" | "list" | "card";
+  cardDirection: "top-to-bottom" | "bottom-to-top";
   updatedAt?: Date;
 }
 
@@ -10,6 +11,11 @@ const SettingsSchema = new Schema<ISettings>({
     type: String, 
     enum: ["grid", "list", "card"], 
     default: "list" 
+  },
+  cardDirection: {
+    type: String,
+    enum: ["top-to-bottom", "bottom-to-top"],
+    default: "top-to-bottom"
   },
   updatedAt: { type: Date, default: Date.now },
 });
