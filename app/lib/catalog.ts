@@ -11,6 +11,7 @@ export async function getCatalog(): Promise<CatalogDTO[]> {
     description: d.description,
     image: d.image,
     imageMimeType: d.imageMimeType,
+    itemViewType: d.itemViewType || "type1",
   }));
 }
 
@@ -24,6 +25,7 @@ export async function getCatalogById(id: string): Promise<CatalogDTO | null> {
     description: d.description,
     image: d.image,
     imageMimeType: d.imageMimeType,
+    itemViewType: d.itemViewType || "type1",
   };
 }
 

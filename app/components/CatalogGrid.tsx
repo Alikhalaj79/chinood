@@ -2,20 +2,35 @@
 
 import React, { useEffect, useState } from "react";
 import type { CatalogDTO } from "../lib/types";
+import CatalogCard from "./CatalogCard";
+import CatalogCardSkeleton, {
+  CatalogCardSkeletonHorizontal,
+} from "./CatalogCardSkeleton";
 
 export default function CatalogGrid() {
   const [items, setItems] = useState<CatalogDTO[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchItems = async () => {
       try {
+        setLoading(true);
+        setError(null);
         const res = await fetch("/api/catalog");
-        if (!res.ok) throw new Error(await res.text());
+        if (!res.ok) {
+          const errorText = await res.text();
+          throw new Error(errorText || "خطا در بارگذاری کاتالوگ");
+        }
         const data = await res.json();
         setItems(data);
       } catch (err) {
         console.error("Failed to load catalog", err);
+        setError(
+          err instanceof Error
+            ? err.message
+            : "خطایی در بارگذاری کاتالوگ رخ داد. لطفاً دوباره تلاش کنید."
+        );
       } finally {
         setLoading(false);
       }
@@ -25,11 +40,9 @@ export default function CatalogGrid() {
 
   const getImageUrl = (item: CatalogDTO) => {
     if (item.image) {
-      // If image is base64 string, create data URL
       if (item.imageMimeType) {
         return `data:${item.imageMimeType};base64,${item.image}`;
       }
-      // Fallback: use API endpoint
       return `/api/images/${item.id}`;
     }
     return null;
@@ -37,51 +50,57 @@ export default function CatalogGrid() {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center py-12">
-        <div className="text-lg text-[#497321]">در حال بارگذاری...</div>
+      <div className="flex flex-col w-full gap-8">
+        {[1, 2, 3].map((i) => (
+          <CatalogCardSkeleton key={i} />
+        ))}
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 px-4">
+        <div className="text-6xl mb-4">⚠️</div>
+        <h2 className="text-xl md:text-2xl font-bold text-[#253614] mb-2">
+          خطا در بارگذاری
+        </h2>
+        <p className="text-gray-600 text-center mb-6 max-w-md">{error}</p>
+        <button
+          onClick={() => window.location.reload()}
+          className="px-6 py-3 bg-[#497321] hover:bg-[#253614] text-white font-semibold rounded-lg transition-colors shadow-md hover:shadow-lg"
+        >
+          تلاش مجدد
+        </button>
       </div>
     );
   }
 
   if (items.length === 0) {
     return (
-      <div className="text-center py-12 text-gray-600">
-        آیتمی یافت نشد.
+      <div className="flex flex-col items-center justify-center py-16 px-4">
+        <div className="text-6xl mb-4">📋</div>
+        <h2 className="text-xl md:text-2xl font-bold text-[#253614] mb-2">
+          هیچ آیتمی وجود ندارد
+        </h2>
+        <p className="text-gray-600 text-center max-w-md">
+          در حال حاضر هیچ کاردی در کاتالوگ موجود نیست.
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col w-full">
-      {items.map((item) => {
-        const imageUrl = getImageUrl(item);
-        return (
-          <div
-            key={item.id}
-            className="flex flex-col w-full mb-12 md:mb-16"
-          >
-            {imageUrl ? (
-              <img
-                src={imageUrl}
-                alt={item.title}
-                className="w-full h-64 md:h-80 lg:h-96 object-cover mb-4"
-              />
-            ) : (
-              <div className="w-full h-64 md:h-80 lg:h-96 bg-gray-200 flex items-center justify-center mb-4">
-                <span className="text-gray-400">بدون تصویر</span>
-              </div>
-            )}
-            <h3 className="text-xl md:text-2xl font-semibold text-[#253614] mb-3 px-6">
-              {item.title}
-            </h3>
-            {item.description && (
-              <p className="text-gray-600 text-sm md:text-base leading-relaxed px-6">
-                {item.description}
-              </p>
-            )}
-          </div>
-        );
-      })}
+    <div className="flex flex-col w-full gap-8 md:gap-12">
+      {items.map((item, index) => (
+        <div
+          key={item.id}
+          className="w-full animate-fade-in-up"
+          style={{ animationDelay: `${index * 0.1}s` }}
+        >
+          <CatalogCard item={item} getImageUrl={getImageUrl} />
+        </div>
+      ))}
     </div>
   );
 }

@@ -25,10 +25,10 @@ export async function PUT(
 ) {
   try {
     const { id } = await params;
-    
+
     // Ensure database connection
     await connectDB();
-    
+
     // Check authentication from cookie or header
     const auth = await verifyRequestAuth(req);
     if (!auth.valid) {
@@ -36,34 +36,69 @@ export async function PUT(
     }
 
     const formData = await req.formData();
-    const title = formData.get("title") as string;
+    const title = formData.get("title") as string | null;
     const description = formData.get("description") as string | null;
     const imageFile = formData.get("image") as File | null;
     const removeImage = formData.get("removeImage") === "true";
+    const itemViewType = formData.get("itemViewType") as
+      | "type1"
+      | "type2"
+      | "type3"
+      | null;
 
-    if (!title || title.trim() === "") {
-      return new NextResponse("عنوان الزامی است", { status: 400 });
+    // Get existing item to preserve fields if not provided
+    const existingItem = await CatalogItemModel.findById(id);
+    if (!existingItem) {
+      return new NextResponse("Not found", { status: 404 });
     }
 
-    const updateData: any = {
-      title: title.trim(),
-      description: description?.trim() || undefined,
-    };
+    const updateData: any = {};
+
+    // Update title if provided
+    if (title !== null && title !== undefined) {
+      if (!title.trim()) {
+        return new NextResponse("عنوان الزامی است", { status: 400 });
+      }
+      updateData.title = title.trim();
+    }
+
+    // Update description if provided
+    if (description !== null && description !== undefined) {
+      updateData.description = description.trim() || undefined;
+    }
+
+    // Update itemViewType if provided
+    if (itemViewType !== null && itemViewType !== undefined) {
+      if (["type1", "type2", "type3"].includes(itemViewType)) {
+        updateData.itemViewType = itemViewType;
+      } else {
+        return new NextResponse("نوع نمایش نامعتبر است", { status: 400 });
+      }
+    }
 
     if (removeImage) {
       updateData.image = undefined;
       updateData.imageMimeType = undefined;
     } else if (imageFile && imageFile.size > 0) {
       // Validate file type
-      const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+      const allowedTypes = [
+        "image/jpeg",
+        "image/jpg",
+        "image/png",
+        "image/webp",
+      ];
       if (!allowedTypes.includes(imageFile.type)) {
-        return new NextResponse("فرمت تصویر باید jpeg، png یا webp باشد", { status: 400 });
+        return new NextResponse("فرمت تصویر باید jpeg، png یا webp باشد", {
+          status: 400,
+        });
       }
 
       // Validate file size (max 5MB)
       const maxSize = 5 * 1024 * 1024; // 5MB
       if (imageFile.size > maxSize) {
-        return new NextResponse("حجم تصویر نباید بیشتر از 5 مگابایت باشد", { status: 400 });
+        return new NextResponse("حجم تصویر نباید بیشتر از 5 مگابایت باشد", {
+          status: 400,
+        });
       }
 
       // Convert file to base64
@@ -72,13 +107,11 @@ export async function PUT(
       updateData.image = buffer.toString("base64");
       updateData.imageMimeType = imageFile.type;
     }
-    
-    const item = await CatalogItemModel.findByIdAndUpdate(
-      id,
-      updateData,
-      { new: true }
-    );
-    
+
+    const item = await CatalogItemModel.findByIdAndUpdate(id, updateData, {
+      new: true,
+    });
+
     if (!item) return new NextResponse("Not found", { status: 404 });
     return NextResponse.json({ message: "Updated" });
   } catch (err) {
@@ -93,10 +126,10 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    
+
     // Ensure database connection
     await connectDB();
-    
+
     // Check authentication from cookie or header
     const auth = await verifyRequestAuth(req);
     if (!auth.valid) {

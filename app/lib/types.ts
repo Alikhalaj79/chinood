@@ -4,6 +4,7 @@ export type CatalogDTO = {
   description?: string;
   image?: string;
   imageMimeType?: string;
+  itemViewType?: "type1" | "type2" | "type3";
 };
 
 export type UserDTO = {
