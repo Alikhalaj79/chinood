@@ -7,8 +7,8 @@ export async function GET(req: Request) {
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>پردیس گستر چینود - API Documentation</title>
-    <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@4.19.1/swagger-ui.css" />
+    <title>Chinood API Documentation</title>
+    <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5.10.5/swagger-ui.css" />
     <style>
       body {
         margin: 0;
@@ -20,8 +20,8 @@ export async function GET(req: Request) {
   </head>
   <body>
     <div id="swagger-ui"></div>
-    <script src="https://unpkg.com/swagger-ui-dist@4.19.1/swagger-ui-bundle.js"></script>
-    <script src="https://unpkg.com/swagger-ui-dist@4.19.1/swagger-ui-standalone-preset.js"></script>
+    <script src="https://unpkg.com/swagger-ui-dist@5.10.5/swagger-ui-bundle.js"></script>
+    <script src="https://unpkg.com/swagger-ui-dist@5.10.5/swagger-ui-standalone-preset.js"></script>
     <script>
       window.onload = function() {
         const ui = SwaggerUIBundle({

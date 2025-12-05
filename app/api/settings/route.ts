@@ -9,11 +9,12 @@ export async function GET() {
     await connectDB();
     let settings = await Settings.findOne();
     if (!settings) {
-      settings = await Settings.create({ catalogViewType: "list", cardDirection: "top-to-bottom" });
+      settings = await Settings.create({ catalogViewType: "list", cardDirection: "top-to-bottom", itemsPerPage: 7 });
     }
     return NextResponse.json({ 
       catalogViewType: settings.catalogViewType,
-      cardDirection: settings.cardDirection || "top-to-bottom"
+      cardDirection: settings.cardDirection || "top-to-bottom",
+      itemsPerPage: settings.itemsPerPage || 7
     });
   } catch (err) {
     console.error("GET /api/settings error", err);
@@ -32,13 +33,14 @@ export async function PUT(req: Request) {
     }
 
     const body = await req.json();
-    const { catalogViewType, cardDirection } = body;
+    const { catalogViewType, cardDirection, itemsPerPage } = body;
 
     let settings = await Settings.findOne();
     if (!settings) {
       settings = await Settings.create({ 
         catalogViewType: catalogViewType || "list",
-        cardDirection: cardDirection || "top-to-bottom"
+        cardDirection: cardDirection || "top-to-bottom",
+        itemsPerPage: itemsPerPage || 7
       });
     } else {
       if (catalogViewType && ["grid", "list", "card"].includes(catalogViewType)) {
@@ -47,13 +49,17 @@ export async function PUT(req: Request) {
       if (cardDirection && ["top-to-bottom", "bottom-to-top"].includes(cardDirection)) {
         settings.cardDirection = cardDirection;
       }
+      if (itemsPerPage !== undefined && itemsPerPage >= 1 && itemsPerPage <= 50) {
+        settings.itemsPerPage = itemsPerPage;
+      }
       settings.updatedAt = new Date();
       await settings.save();
     }
 
     return NextResponse.json({ 
       catalogViewType: settings.catalogViewType,
-      cardDirection: settings.cardDirection || "top-to-bottom"
+      cardDirection: settings.cardDirection || "top-to-bottom",
+      itemsPerPage: settings.itemsPerPage || 7
     });
   } catch (err) {
     console.error("PUT /api/settings error", err);

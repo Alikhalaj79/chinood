@@ -37,9 +37,13 @@ export default function CatalogCard({ item, getImageUrl }: CatalogCardProps) {
             {item.title}
           </h3>
           {item.description && (
-            <p className="text-gray-600 text-sm md:text-base leading-relaxed">
-              {item.description}
-            </p>
+            <div className="text-gray-600 text-sm md:text-base leading-relaxed text-justify">
+              {item.description.split('\n').map((paragraph, index) => (
+                <p key={index} className={index > 0 ? 'mt-3' : ''}>
+                  {paragraph || '\u00A0'}
+                </p>
+              ))}
+            </div>
           )}
         </div>
       </div>
@@ -56,9 +60,13 @@ export default function CatalogCard({ item, getImageUrl }: CatalogCardProps) {
               {item.title}
             </h3>
             {item.description && (
-              <p className="text-gray-600 text-sm md:text-base leading-relaxed">
-                {item.description}
-              </p>
+              <div className="text-gray-600 text-sm md:text-base leading-relaxed text-justify">
+                {item.description.split('\n').map((paragraph, index) => (
+                  <p key={index} className={index > 0 ? 'mt-3' : ''}>
+                    {paragraph || '\u00A0'}
+                  </p>
+                ))}
+              </div>
             )}
           </div>
           <div className="flex-1 w-full md:w-auto order-1 md:order-2">
@@ -112,9 +120,13 @@ export default function CatalogCard({ item, getImageUrl }: CatalogCardProps) {
               {item.title}
             </h3>
             {item.description && (
-              <p className="text-gray-600 text-sm md:text-base leading-relaxed">
-                {item.description}
-              </p>
+              <div className="text-gray-600 text-sm md:text-base leading-relaxed text-justify">
+                {item.description.split('\n').map((paragraph, index) => (
+                  <p key={index} className={index > 0 ? 'mt-3' : ''}>
+                    {paragraph || '\u00A0'}
+                  </p>
+                ))}
+              </div>
             )}
           </div>
         </div>
@@ -144,9 +156,13 @@ export default function CatalogCard({ item, getImageUrl }: CatalogCardProps) {
           {item.title}
         </h3>
         {item.description && (
-          <p className="text-gray-600 text-sm md:text-base leading-relaxed">
-            {item.description}
-          </p>
+          <div className="text-gray-600 text-sm md:text-base leading-relaxed text-justify">
+            {item.description.split('\n').map((paragraph, index) => (
+              <p key={index} className={index > 0 ? 'mt-3' : ''}>
+                {paragraph || '\u00A0'}
+              </p>
+            ))}
+          </div>
         )}
       </div>
     </div>

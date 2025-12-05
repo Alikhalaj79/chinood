@@ -11,6 +11,7 @@ interface ConfirmModalProps {
   onConfirm: () => void;
   onCancel: () => void;
   type?: "danger" | "warning" | "info";
+  loading?: boolean;
 }
 
 export default function ConfirmModal({
@@ -22,6 +23,7 @@ export default function ConfirmModal({
   onConfirm,
   onCancel,
   type = "danger",
+  loading = false,
 }: ConfirmModalProps) {
   if (!isOpen) return null;
 
@@ -46,15 +48,24 @@ export default function ConfirmModal({
         <div className="flex gap-3 justify-end">
           <button
             onClick={onCancel}
-            className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold rounded-lg transition-colors"
+            disabled={loading}
+            className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {cancelText}
           </button>
           <button
             onClick={onConfirm}
-            className={`px-4 py-2 ${buttonColor} text-white font-semibold rounded-lg transition-colors`}
+            disabled={loading}
+            className={`px-4 py-2 ${buttonColor} text-white font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2`}
           >
-            {confirmText}
+            {loading ? (
+              <>
+                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                در حال حذف...
+              </>
+            ) : (
+              confirmText
+            )}
           </button>
         </div>
       </div>

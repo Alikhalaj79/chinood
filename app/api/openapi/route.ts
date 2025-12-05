@@ -4,10 +4,10 @@ import { NextResponse } from "next/server";
 const openapiSpec = {
   openapi: "3.0.3",
   info: {
-    title: "پردیس گستر چینود API",
+    title: "Chinood API",
     version: "0.1.0",
     description:
-      "مستندات API برای پروژه پردیس گستر چینود. این API امکان مدیریت کاتالوگ کاردها و احراز هویت را فراهم می‌کند.",
+      "API documentation for Chinood project. This API provides catalog card management and authentication capabilities.",
     contact: {
       name: "API Support",
     },
@@ -24,40 +24,40 @@ const openapiSpec = {
     schemas: {
       CatalogDTO: {
         type: "object",
-        description: "شیء کارد کاتالوگ",
+        description: "Catalog card object",
         properties: {
           id: {
             type: "string",
-            description: "شناسه یکتا کارد",
+            description: "Unique card identifier",
             example: "507f1f77bcf86cd799439011",
           },
           title: {
             type: "string",
-            description: "عنوان کارد",
-            example: "محصول نمونه",
+            description: "Card title",
+            example: "Sample Product",
           },
           description: {
             type: "string",
             nullable: true,
-            description: "توضیحات کارد (اختیاری)",
-            example: "این یک نمونه کارد است",
+            description: "Card description (optional)",
+            example: "This is a sample card",
           },
           image: {
             type: "string",
             nullable: true,
-            description: "تصویر کارد به صورت base64 (اختیاری)",
+            description: "Card image as base64 (optional)",
           },
           imageMimeType: {
             type: "string",
             nullable: true,
-            description: "نوع MIME تصویر (مثل image/jpeg, image/png)",
+            description: "Image MIME type (e.g., image/jpeg, image/png)",
             example: "image/jpeg",
           },
           itemViewType: {
             type: "string",
             enum: ["type1", "type2", "type3"],
             description:
-              "نوع نمایش کارد در صفحه اصلی: type1 (عکس بالا و متن پایین), type2 (متن راست و عکس چپ), type3 (عکس راست و متن چپ)",
+              "Card display type on main page: type1 (image top, text bottom), type2 (text left, image right), type3 (image left, text right)",
             default: "type1",
             example: "type1",
           },
@@ -117,30 +117,30 @@ const openapiSpec = {
       },
       CreateCatalogItem: {
         type: "object",
-        description: "داده‌های مورد نیاز برای ایجاد یا به‌روزرسانی کارد",
+        description: "Data required for creating or updating a card",
         properties: {
           title: {
             type: "string",
-            description: "عنوان کارد (الزامی)",
-            example: "محصول جدید",
+            description: "Card title (required)",
+            example: "New Product",
           },
           description: {
             type: "string",
             nullable: true,
-            description: "توضیحات کارد (اختیاری)",
-            example: "توضیحات محصول جدید",
+            description: "Card description (optional)",
+            example: "Description of the new product",
           },
           image: {
             type: "string",
             format: "binary",
             description:
-              "فایل تصویر (JPEG, PNG, یا WebP، حداکثر 5 مگابایت) - اختیاری",
+              "Image file (JPEG, PNG, or WebP, maximum 5MB) - optional",
           },
           itemViewType: {
             type: "string",
             enum: ["type1", "type2", "type3"],
             description:
-              "نوع نمایش کارد: type1 (عکس بالا), type2 (عکس چپ), type3 (عکس راست). پیش‌فرض: type1",
+              "Card display type: type1 (image top), type2 (image left), type3 (image right). Default: type1",
             default: "type1",
             example: "type1",
           },
@@ -152,13 +152,13 @@ const openapiSpec = {
   paths: {
     "/api/catalog": {
       get: {
-        summary: "لیست کاردهای کاتالوگ",
+        summary: "List catalog cards",
         description:
-          "دریافت تمام کاردهای کاتالوگ. این endpoint همه کاردها را برمی‌گرداند. Pagination و فیلتر در سمت کلاینت انجام می‌شود.",
+          "Retrieve all catalog cards. This endpoint returns all cards. Pagination and filtering are handled on the client side.",
         tags: ["Catalog"],
         responses: {
           "200": {
-            description: "لیست موفقیت‌آمیز کاردهای کاتالوگ",
+            description: "Successfully retrieved catalog cards list",
             content: {
               "application/json": {
                 schema: {
@@ -168,8 +168,8 @@ const openapiSpec = {
                 example: [
                   {
                     id: "507f1f77bcf86cd799439011",
-                    title: "مثال کارد",
-                    description: "توضیحات نمونه",
+                    title: "Example Card",
+                    description: "Sample description",
                     itemViewType: "type1",
                   },
                 ],
@@ -177,13 +177,13 @@ const openapiSpec = {
             },
           },
           "500": {
-            description: "خطای سرور",
+            description: "Server error",
           },
         },
       },
       post: {
-        summary: "ایجاد کارد جدید (فقط ادمین)",
-        description: "ایجاد یک کارد جدید در کاتالوگ. نیاز به احراز هویت دارد.",
+        summary: "Create new card (Admin only)",
+        description: "Create a new card in the catalog. Requires authentication.",
         tags: ["Catalog"],
         security: [{ bearerAuth: [] }],
         requestBody: {
@@ -196,7 +196,7 @@ const openapiSpec = {
         },
         responses: {
           "201": {
-            description: "کارد با موفقیت ایجاد شد",
+            description: "Card successfully created",
             content: {
               "text/plain": {
                 schema: { type: "string", example: "Created" },
@@ -205,18 +205,18 @@ const openapiSpec = {
           },
           "400": {
             description:
-              "درخواست نامعتبر (مثلاً عنوان خالی است یا فرمت تصویر نامعتبر)",
+              "Invalid request (e.g., empty title or invalid image format)",
             content: {
               "text/plain": {
-                schema: { type: "string", example: "عنوان الزامی است" },
+                schema: { type: "string", example: "Title is required" },
               },
             },
           },
           "403": {
-            description: "دسترسی غیرمجاز - نیاز به احراز هویت ادمین",
+            description: "Forbidden - Admin authentication required",
           },
           "500": {
-            description: "خطای سرور",
+            description: "Server error",
           },
         },
       },
@@ -226,26 +226,26 @@ const openapiSpec = {
         { name: "id", in: "path", required: true, schema: { type: "string" } },
       ],
       get: {
-        summary: "دریافت یک کارد خاص",
-        description: "دریافت جزئیات یک کارد با استفاده از شناسه آن",
+        summary: "Get a specific card",
+        description: "Retrieve details of a card using its identifier",
         tags: ["Catalog"],
         responses: {
           "200": {
-            description: "کارد پیدا شد",
+            description: "Card found",
             content: {
               "application/json": {
                 schema: { $ref: "#/components/schemas/CatalogDTO" },
                 example: {
                   id: "507f1f77bcf86cd799439011",
-                  title: "مثال کارد",
-                  description: "توضیحات نمونه",
+                  title: "Example Card",
+                  description: "Sample description",
                   itemViewType: "type1",
                 },
               },
             },
           },
           "404": {
-            description: "کارد پیدا نشد",
+            description: "Card not found",
             content: {
               "text/plain": {
                 schema: { type: "string", example: "Not found" },
@@ -253,14 +253,14 @@ const openapiSpec = {
             },
           },
           "500": {
-            description: "خطای سرور",
+            description: "Server error",
           },
         },
       },
       put: {
-        summary: "به‌روزرسانی کارد (فقط ادمین)",
+        summary: "Update card (Admin only)",
         description:
-          "به‌روزرسانی اطلاعات یک کارد موجود. تمام فیلدها اختیاری هستند - فقط فیلدهای ارسال شده به‌روزرسانی می‌شوند.",
+          "Update information of an existing card. All fields are optional - only sent fields will be updated.",
         tags: ["Catalog"],
         security: [{ bearerAuth: [] }],
         requestBody: {
@@ -273,7 +273,7 @@ const openapiSpec = {
         },
         responses: {
           "200": {
-            description: "کارد با موفقیت به‌روزرسانی شد",
+            description: "Card successfully updated",
             content: {
               "text/plain": {
                 schema: { type: "string", example: "Updated" },
@@ -281,18 +281,18 @@ const openapiSpec = {
             },
           },
           "400": {
-            description: "درخواست نامعتبر",
+            description: "Invalid request",
             content: {
               "text/plain": {
-                schema: { type: "string", example: "خطا در به‌روزرسانی" },
+                schema: { type: "string", example: "Update error" },
               },
             },
           },
           "403": {
-            description: "دسترسی غیرمجاز - نیاز به احراز هویت ادمین",
+            description: "Forbidden - Admin authentication required",
           },
           "404": {
-            description: "کارد پیدا نشد",
+            description: "Card not found",
             content: {
               "text/plain": {
                 schema: { type: "string", example: "Not found" },
@@ -300,18 +300,18 @@ const openapiSpec = {
             },
           },
           "500": {
-            description: "خطای سرور",
+            description: "Server error",
           },
         },
       },
       delete: {
-        summary: "حذف کارد (فقط ادمین)",
-        description: "حذف یک کارد از کاتالوگ. این عملیات قابل بازگشت نیست.",
+        summary: "Delete card (Admin only)",
+        description: "Delete a card from the catalog. This operation cannot be undone.",
         tags: ["Catalog"],
         security: [{ bearerAuth: [] }],
         responses: {
           "200": {
-            description: "کارد با موفقیت حذف شد",
+            description: "Card successfully deleted",
             content: {
               "text/plain": {
                 schema: { type: "string", example: "Deleted" },
@@ -319,10 +319,10 @@ const openapiSpec = {
             },
           },
           "403": {
-            description: "دسترسی غیرمجاز - نیاز به احراز هویت ادمین",
+            description: "Forbidden - Admin authentication required",
           },
           "404": {
-            description: "کارد پیدا نشد",
+            description: "Card not found",
             content: {
               "text/plain": {
                 schema: { type: "string", example: "Not found" },
@@ -330,16 +330,16 @@ const openapiSpec = {
             },
           },
           "500": {
-            description: "خطای سرور",
+            description: "Server error",
           },
         },
       },
     },
     "/api/auth/login": {
       post: {
-        summary: "ورود به سیستم",
+        summary: "Login",
         description:
-          "ورود به سیستم و دریافت access token و refresh token. Access token به مدت 15 دقیقه و refresh token به مدت 7 روز معتبر است.",
+          "Login and receive access token and refresh token. Access token is valid for 15 minutes and refresh token is valid for 7 days.",
         tags: ["Authentication"],
         requestBody: {
           required: true,
@@ -355,7 +355,7 @@ const openapiSpec = {
         },
         responses: {
           "200": {
-            description: "ورود موفق - توکن‌ها دریافت شدند",
+            description: "Login successful - tokens received",
             content: {
               "application/json": {
                 schema: { $ref: "#/components/schemas/TokenResponse" },
@@ -367,7 +367,7 @@ const openapiSpec = {
             },
           },
           "401": {
-            description: "نام کاربری یا رمز عبور نامعتبر",
+            description: "Invalid username or password",
             content: {
               "application/json": {
                 schema: {
@@ -384,9 +384,9 @@ const openapiSpec = {
     },
     "/api/auth/refresh": {
       post: {
-        summary: "تجدید access token",
+        summary: "Refresh access token",
         description:
-          "استفاده از refresh token برای دریافت access token جدید. یک refresh token جدید نیز برگردانده می‌شود.",
+          "Use refresh token to get a new access token. A new refresh token is also returned.",
         tags: ["Authentication"],
         requestBody: {
           required: true,
@@ -401,7 +401,7 @@ const openapiSpec = {
         },
         responses: {
           "200": {
-            description: "توکن‌های جدید با موفقیت دریافت شدند",
+            description: "New tokens successfully received",
             content: {
               "application/json": {
                 schema: { $ref: "#/components/schemas/TokenResponse" },
@@ -409,7 +409,7 @@ const openapiSpec = {
             },
           },
           "401": {
-            description: "Refresh token نامعتبر یا منقضی شده است",
+            description: "Invalid or expired refresh token",
             content: {
               "application/json": {
                 schema: {
@@ -429,9 +429,9 @@ const openapiSpec = {
     },
     "/api/auth/logout": {
       post: {
-        summary: "خروج از سیستم",
+        summary: "Logout",
         description:
-          "خروج از سیستم و لغو refresh token. پس از این عملیات، refresh token دیگر معتبر نخواهد بود.",
+          "Logout and revoke refresh token. After this operation, the refresh token will no longer be valid.",
         tags: ["Authentication"],
         requestBody: {
           content: {
@@ -445,7 +445,7 @@ const openapiSpec = {
         },
         responses: {
           "200": {
-            description: "خروج با موفقیت انجام شد",
+            description: "Logout successful",
             content: {
               "application/json": {
                 schema: {
@@ -465,14 +465,14 @@ const openapiSpec = {
     },
     "/api/auth/me": {
       get: {
-        summary: "بررسی وضعیت احراز هویت",
+        summary: "Check authentication status",
         description:
-          "بررسی اینکه کاربر احراز هویت شده است یا خیر و دریافت اطلاعات کاربر جاری.",
+          "Check if user is authenticated and get current user information.",
         tags: ["Authentication"],
         security: [{ bearerAuth: [] }],
         responses: {
           "200": {
-            description: "کاربر احراز هویت شده است",
+            description: "User is authenticated",
             content: {
               "application/json": {
                 schema: { $ref: "#/components/schemas/AuthStatusResponse" },
@@ -487,7 +487,7 @@ const openapiSpec = {
             },
           },
           "401": {
-            description: "کاربر احراز هویت نشده است",
+            description: "User is not authenticated",
             content: {
               "application/json": {
                 schema: { $ref: "#/components/schemas/AuthStatusResponse" },
@@ -508,18 +508,18 @@ const openapiSpec = {
           in: "path",
           required: true,
           schema: { type: "string" },
-          description: "شناسه یکتا کارد",
+          description: "Unique card identifier",
           example: "507f1f77bcf86cd799439011",
         },
       ],
       get: {
-        summary: "دریافت تصویر کارد",
+        summary: "Get card image",
         description:
-          "دریافت تصویر یک کارد خاص. تصویر با Content-Type مناسب برگردانده می‌شود و کش می‌شود.",
+          "Retrieve image of a specific card. Image is returned with appropriate Content-Type and cached.",
         tags: ["Catalog"],
         responses: {
           "200": {
-            description: "تصویر کارد",
+            description: "Card image",
             content: {
               "image/jpeg": {
                 schema: { type: "string", format: "binary" },
@@ -534,18 +534,18 @@ const openapiSpec = {
             headers: {
               "Content-Type": {
                 schema: { type: "string" },
-                description: "نوع MIME تصویر",
+                description: "Image MIME type",
                 example: "image/jpeg",
               },
               "Cache-Control": {
                 schema: { type: "string" },
-                description: "کنترل کش",
+                description: "Cache control",
                 example: "public, max-age=31536000, immutable",
               },
             },
           },
           "404": {
-            description: "تصویر یا کارد پیدا نشد",
+            description: "Image or card not found",
             content: {
               "text/plain": {
                 schema: { type: "string", example: "Image not found" },
@@ -553,7 +553,115 @@ const openapiSpec = {
             },
           },
           "500": {
-            description: "خطای سرور",
+            description: "Server error",
+          },
+        },
+      },
+    },
+    "/api/settings": {
+      get: {
+        summary: "Get settings",
+        description: "Retrieve application settings. This endpoint is public and does not require authentication.",
+        tags: ["Settings"],
+        responses: {
+          "200": {
+            description: "Settings retrieved successfully",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    catalogViewType: {
+                      type: "string",
+                      enum: ["grid", "list", "card"],
+                      description: "Catalog view type",
+                      example: "list",
+                    },
+                    cardDirection: {
+                      type: "string",
+                      enum: ["top-to-bottom", "bottom-to-top"],
+                      description: "Card display direction",
+                      example: "top-to-bottom",
+                    },
+                    itemsPerPage: {
+                      type: "number",
+                      description: "Number of items per page for pagination",
+                      minimum: 1,
+                      maximum: 50,
+                      example: 7,
+                    },
+                  },
+                },
+              },
+            },
+          },
+          "500": {
+            description: "Server error",
+          },
+        },
+      },
+      put: {
+        summary: "Update settings (Admin only)",
+        description: "Update application settings. Requires admin authentication.",
+        tags: ["Settings"],
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  catalogViewType: {
+                    type: "string",
+                    enum: ["grid", "list", "card"],
+                    description: "Catalog view type",
+                  },
+                  cardDirection: {
+                    type: "string",
+                    enum: ["top-to-bottom", "bottom-to-top"],
+                    description: "Card display direction",
+                  },
+                  itemsPerPage: {
+                    type: "number",
+                    description: "Number of items per page for pagination",
+                    minimum: 1,
+                    maximum: 50,
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          "200": {
+            description: "Settings updated successfully",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    catalogViewType: {
+                      type: "string",
+                      enum: ["grid", "list", "card"],
+                    },
+                    cardDirection: {
+                      type: "string",
+                      enum: ["top-to-bottom", "bottom-to-top"],
+                    },
+                    itemsPerPage: {
+                      type: "number",
+                    },
+                  },
+                },
+              },
+            },
+          },
+          "403": {
+            description: "Forbidden - Admin authentication required",
+          },
+          "500": {
+            description: "Server error",
           },
         },
       },

@@ -39,8 +39,11 @@ export default function AdminDashboard() {
   const [currentPage, setCurrentPage] = useState(1);
   const [removeImage, setRemoveImage] = useState(false);
   const [hasOriginalImage, setHasOriginalImage] = useState(false);
-  const [cardDirection, setCardDirection] = useState<"top-to-bottom" | "bottom-to-top">("top-to-bottom");
+  const [cardDirection, setCardDirection] = useState<
+    "top-to-bottom" | "bottom-to-top"
+  >("top-to-bottom");
   const [loadingSettings, setLoadingSettings] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Auto-refresh token when needed
   useAutoRefreshToken();
@@ -91,6 +94,9 @@ export default function AdminDashboard() {
         if (res.ok) {
           const data = await res.json();
           setCardDirection(data.cardDirection || "top-to-bottom");
+          if (data.itemsPerPage) {
+            setItemsPerPage(data.itemsPerPage);
+          }
         }
       } catch (err) {
         console.error("Failed to load settings", err);
@@ -126,7 +132,7 @@ export default function AdminDashboard() {
   // Filter items based on search query
   const filteredItems = useMemo(() => {
     let result = items;
-    
+
     // Apply search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim();
@@ -136,7 +142,7 @@ export default function AdminDashboard() {
           item.description?.toLowerCase().includes(query)
       );
     }
-    
+
     // Apply card direction (sort by creation date)
     // API returns items sorted by createdAt: -1 (newest first)
     // top-to-bottom: newest first (keep as is)
@@ -144,7 +150,7 @@ export default function AdminDashboard() {
     if (cardDirection === "bottom-to-top") {
       result = [...result].reverse();
     }
-    
+
     return result;
   }, [items, searchQuery, cardDirection]);
 
@@ -181,9 +187,11 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleCardDirectionChange = async (direction: "top-to-bottom" | "bottom-to-top") => {
+  const handleCardDirectionChange = async (
+    direction: "top-to-bottom" | "bottom-to-top"
+  ) => {
     if (loadingSettings) return; // Prevent multiple simultaneous requests
-    
+
     setLoadingSettings(true);
     try {
       const res = await authenticatedFetch("/api/settings", {
@@ -198,6 +206,12 @@ export default function AdminDashboard() {
         const data = await res.json();
         setCardDirection(data.cardDirection || direction);
         showToast("جهت نمایش کارت‌ها با موفقیت تغییر کرد", "success");
+        // Broadcast settings update to other tabs/pages
+        if (typeof BroadcastChannel !== "undefined") {
+          const channel = new BroadcastChannel("settings-updates");
+          channel.postMessage({ type: "settings-updated" });
+          channel.close();
+        }
       } else {
         const errorText = await res.text();
         console.error("Failed to update card direction:", errorText);
@@ -301,7 +315,7 @@ export default function AdminDashboard() {
   };
 
   const handleDeleteItem = async (itemId: string) => {
-    setLoadingItems(true);
+    setIsDeleting(true);
     try {
       const res = await authenticatedFetch(`/api/catalog/${itemId}`, {
         method: "DELETE",
@@ -321,7 +335,7 @@ export default function AdminDashboard() {
       console.error(err);
       showToast("خطا در حذف آیتم", "error");
     } finally {
-      setLoadingItems(false);
+      setIsDeleting(false);
       setDeleteConfirm({ isOpen: false, itemId: null });
     }
   };
@@ -454,6 +468,7 @@ export default function AdminDashboard() {
           confirmText="حذف"
           cancelText="لغو"
           type="danger"
+          loading={isDeleting}
           onConfirm={() => {
             if (deleteConfirm.itemId) {
               handleDeleteItem(deleteConfirm.itemId);
@@ -707,9 +722,36 @@ export default function AdminDashboard() {
                   </label>
                   <select
                     value={itemsPerPage}
-                    onChange={(e) => {
-                      setItemsPerPage(Number(e.target.value));
+                    onChange={async (e) => {
+                      const newValue = Number(e.target.value);
+                      setItemsPerPage(newValue);
                       setCurrentPage(1);
+                      // Save to settings
+                      try {
+                        const res = await authenticatedFetch("/api/settings", {
+                          method: "PUT",
+                          headers: {
+                            "Content-Type": "application/json",
+                          },
+                          body: JSON.stringify({ itemsPerPage: newValue }),
+                        });
+                        if (res.ok) {
+                          showToast(
+                            "تعداد آیتم‌های هر صفحه با موفقیت ذخیره شد",
+                            "success"
+                          );
+                          // Broadcast settings update to other tabs/pages
+                          if (typeof BroadcastChannel !== "undefined") {
+                            const channel = new BroadcastChannel(
+                              "settings-updates"
+                            );
+                            channel.postMessage({ type: "settings-updated" });
+                            channel.close();
+                          }
+                        }
+                      } catch (err) {
+                        console.error("Failed to save itemsPerPage", err);
+                      }
                     }}
                     className="px-3 py-2 border-2 border-[#a3d177] rounded-lg focus:ring-2 focus:ring-[#a3d177] focus:border-[#497321] outline-none transition-all bg-white text-gray-900 text-sm font-medium cursor-pointer min-w-[80px]"
                   >
@@ -737,7 +779,9 @@ export default function AdminDashboard() {
                         cardDirection === "top-to-bottom"
                           ? "border-[#497321] bg-[#f0f9f0] text-[#497321] shadow-sm"
                           : "border-[#a3d177] hover:border-[#497321] text-gray-700 bg-white"
-                      } ${loadingSettings ? "opacity-50 cursor-not-allowed" : ""}`}
+                      } ${
+                        loadingSettings ? "opacity-50 cursor-not-allowed" : ""
+                      }`}
                       title="جدیدترین کارت‌ها در بالا"
                     >
                       ⬇️ جدیدترین
@@ -750,7 +794,9 @@ export default function AdminDashboard() {
                         cardDirection === "bottom-to-top"
                           ? "border-[#497321] bg-[#f0f9f0] text-[#497321] shadow-sm"
                           : "border-[#a3d177] hover:border-[#497321] text-gray-700 bg-white"
-                      } ${loadingSettings ? "opacity-50 cursor-not-allowed" : ""}`}
+                      } ${
+                        loadingSettings ? "opacity-50 cursor-not-allowed" : ""
+                      }`}
                       title="قدیمی‌ترین کارت‌ها در بالا"
                     >
                       ⬆️ قدیمی‌ترین
