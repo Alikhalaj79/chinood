@@ -21,12 +21,12 @@ export default function CatalogCard({ item, getImageUrl }: CatalogCardProps) {
             <img
               src={imageUrl}
               alt={item.title}
-              className="w-full h-64 md:h-80 lg:h-96 object-cover hover:scale-105 transition-transform duration-500 rounded-lg"
+              className="w-full h-96 md:h-[450px] lg:h-[550px] object-cover hover:scale-105 transition-transform duration-500 rounded-lg"
               loading="lazy"
             />
           </div>
         ) : (
-          <div className="w-full h-64 md:h-80 lg:h-96 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center rounded-lg">
+          <div className="w-full h-96 md:h-[450px] lg:h-[550px] bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center rounded-lg">
             <span className="text-gray-400 text-sm md:text-base">
               بدون تصویر
             </span>
@@ -142,12 +142,12 @@ export default function CatalogCard({ item, getImageUrl }: CatalogCardProps) {
           <img
             src={imageUrl}
             alt={item.title}
-            className="w-full h-64 md:h-80 lg:h-96 object-cover hover:scale-105 transition-transform duration-500 rounded-lg"
+            className="w-full h-96 md:h-[450px] lg:h-[550px] object-cover hover:scale-105 transition-transform duration-500 rounded-lg"
             loading="lazy"
           />
         </div>
       ) : (
-        <div className="w-full h-64 md:h-80 lg:h-96 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center rounded-lg">
+        <div className="w-full h-96 md:h-[450px] lg:h-[550px] bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center rounded-lg">
           <span className="text-gray-400 text-sm md:text-base">بدون تصویر</span>
         </div>
       )}
