@@ -7,17 +7,17 @@ export async function GET() {
   try {
     await connectDB();
     
-    // Settings is a singleton - get the first (and only) document
-    // If it doesn't exist, return defaults
-    const settings = await Settings.findOne().lean();
+    // Get settings or return defaults
+    let settings = await Settings.findOne().lean();
     
     if (!settings) {
-      // Return default values if no settings exist
-      return NextResponse.json({
+      // Create default settings if none exist
+      const defaultSettings = await Settings.create({
         catalogViewType: "list",
         cardDirection: "top-to-bottom",
         itemsPerPage: 7,
       });
+      settings = defaultSettings.toObject();
     }
     
     return NextResponse.json({
@@ -33,57 +33,45 @@ export async function GET() {
 
 export async function PUT(req: Request) {
   try {
-    await connectDB();
-    
     // Check authentication
     const auth = await verifyRequestAuth(req);
     if (!auth.valid) {
       return new NextResponse("Forbidden", { status: 403 });
     }
-    
+
     const body = await req.json();
-    const updateData: any = {
-      updatedAt: new Date(),
-    };
+    const { catalogViewType, cardDirection, itemsPerPage } = body;
+
+    await connectDB();
+
+    // Get existing settings or create new
+    let settings = await Settings.findOne();
     
-    // Update catalogViewType if provided
-    if (body.catalogViewType !== undefined) {
-      if (["grid", "list", "card"].includes(body.catalogViewType)) {
-        updateData.catalogViewType = body.catalogViewType;
-      } else {
-        return new NextResponse("نوع نمایش کاتالوگ نامعتبر است", { status: 400 });
+    if (!settings) {
+      settings = await Settings.create({
+        catalogViewType: catalogViewType || "list",
+        cardDirection: cardDirection || "top-to-bottom",
+        itemsPerPage: itemsPerPage || 7,
+      });
+    } else {
+      // Update only provided fields
+      if (catalogViewType !== undefined) {
+        settings.catalogViewType = catalogViewType;
       }
-    }
-    
-    // Update cardDirection if provided
-    if (body.cardDirection !== undefined) {
-      if (["top-to-bottom", "bottom-to-top"].includes(body.cardDirection)) {
-        updateData.cardDirection = body.cardDirection;
-      } else {
-        return new NextResponse("جهت نمایش کارت نامعتبر است", { status: 400 });
+      if (cardDirection !== undefined) {
+        settings.cardDirection = cardDirection;
       }
-    }
-    
-    // Update itemsPerPage if provided
-    if (body.itemsPerPage !== undefined) {
-      const itemsPerPage = Number(body.itemsPerPage);
-      if (isNaN(itemsPerPage) || itemsPerPage < 1 || itemsPerPage > 50) {
-        return new NextResponse("تعداد آیتم‌های هر صفحه باید بین 1 تا 50 باشد", { status: 400 });
+      if (itemsPerPage !== undefined) {
+        settings.itemsPerPage = itemsPerPage;
       }
-      updateData.itemsPerPage = itemsPerPage;
+      settings.updatedAt = new Date();
+      await settings.save();
     }
-    
-    // Settings is a singleton - use findOneAndUpdate with upsert
-    const settings = await Settings.findOneAndUpdate(
-      {},
-      updateData,
-      { new: true, upsert: true, setDefaultsOnInsert: true }
-    ).lean();
-    
+
     return NextResponse.json({
-      catalogViewType: settings.catalogViewType || "list",
-      cardDirection: settings.cardDirection || "top-to-bottom",
-      itemsPerPage: settings.itemsPerPage || 7,
+      catalogViewType: settings.catalogViewType,
+      cardDirection: settings.cardDirection,
+      itemsPerPage: settings.itemsPerPage,
     });
   } catch (err) {
     console.error("PUT /api/settings error", err);

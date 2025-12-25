@@ -35,15 +35,24 @@ export async function POST(req: Request) {
 
     if (imageFile && imageFile.size > 0) {
       // Validate file type
-      const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+      const allowedTypes = [
+        "image/jpeg",
+        "image/jpg",
+        "image/png",
+        "image/webp",
+      ];
       if (!allowedTypes.includes(imageFile.type)) {
-        return new NextResponse("فرمت تصویر باید jpeg، png یا webp باشد", { status: 400 });
+        return new NextResponse("فرمت تصویر باید jpeg، png یا webp باشد", {
+          status: 400,
+        });
       }
 
       // Validate file size (max 5MB)
       const maxSize = 5 * 1024 * 1024; // 5MB
       if (imageFile.size > maxSize) {
-        return new NextResponse("حجم تصویر نباید بیشتر از 5 مگابایت باشد", { status: 400 });
+        return new NextResponse("حجم تصویر نباید بیشتر از 5 مگابایت باشد", {
+          status: 400,
+        });
       }
 
       // Convert file to base64

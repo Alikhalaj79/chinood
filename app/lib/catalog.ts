@@ -4,13 +4,18 @@ import { CatalogDTO } from "./types";
 
 export async function getCatalog(): Promise<CatalogDTO[]> {
   await connectDB();
-  const docs = await CatalogItemModel.find({}).sort({ createdAt: -1 }).lean();
+  // Exclude image data from query to improve performance
+  // Images are served via /api/images/[id] endpoint
+  const docs = await CatalogItemModel.find({})
+    .select("-image")
+    .sort({ createdAt: -1 })
+    .lean();
   return docs.map((d: any) => ({
     id: d._id.toString(),
     title: d.title,
     description: d.description,
-    image: d.image,
-    imageMimeType: d.imageMimeType,
+    image: undefined, // Don't include base64 image data
+    imageMimeType: d.imageMimeType, // Keep mimeType to know if image exists
     itemViewType: d.itemViewType || "type1",
   }));
 }
