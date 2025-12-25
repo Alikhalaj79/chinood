@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { getCatalog } from "../../lib/catalog";
 import { verifyRequestAuth } from "../../lib/server-auth";
 import CatalogItemModel from "../../lib/models/CatalogItem";
-import { connectDB } from "../../lib/db";
 
 export async function GET() {
   try {
@@ -16,9 +15,6 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    // Ensure database connection
-    await connectDB();
-    
     // Check authentication from cookie or header
     const auth = await verifyRequestAuth(req);
     if (!auth.valid) {
@@ -29,7 +25,6 @@ export async function POST(req: Request) {
     const title = formData.get("title") as string;
     const description = formData.get("description") as string | null;
     const imageFile = formData.get("image") as File | null;
-    const itemViewType = (formData.get("itemViewType") as "type1" | "type2" | "type3") || "type1";
 
     if (!title || title.trim() === "") {
       return new NextResponse("عنوان الزامی است", { status: 400 });
@@ -63,7 +58,6 @@ export async function POST(req: Request) {
       description: description?.trim() || undefined,
       image,
       imageMimeType,
-      itemViewType,
     });
 
     return new NextResponse("Created", { status: 201 });
