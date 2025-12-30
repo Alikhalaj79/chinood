@@ -7,6 +7,17 @@ export async function connectDB() {
     return mongoose.connection;
   }
 
+  // If connection is in progress, wait for it
+  if (mongoose.connection.readyState === 2) {
+    // Connecting state - wait for connection
+    await new Promise((resolve, reject) => {
+      mongoose.connection.once("connected", resolve);
+      mongoose.connection.once("error", reject);
+      setTimeout(() => reject(new Error("Connection timeout")), 30000);
+    });
+    return mongoose.connection;
+  }
+
   // Connect to MongoDB with proper error handling
   const uri = process.env.MONGODB_URI;
   if (!uri) {
@@ -14,11 +25,27 @@ export async function connectDB() {
   }
 
   try {
+    // Disable buffering to prevent timeout errors
+    mongoose.set("bufferCommands", false);
+    mongoose.set("bufferMaxEntries", 0);
+    
     await mongoose.connect(uri, {
-      serverSelectionTimeoutMS: 10000, // Increased timeout for production
+      serverSelectionTimeoutMS: 30000, // 30 seconds for production
       socketTimeoutMS: 45000,
-      connectTimeoutMS: 10000,
+      connectTimeoutMS: 30000,
+      maxPoolSize: 10,
+      minPoolSize: 1,
     });
+    
+    // Wait for connection to be fully established
+    if (mongoose.connection.readyState !== 1) {
+      await new Promise((resolve, reject) => {
+        mongoose.connection.once("connected", resolve);
+        mongoose.connection.once("error", reject);
+        setTimeout(() => reject(new Error("Connection timeout")), 5000);
+      });
+    }
+    
     console.log("MongoDB connected successfully");
     return mongoose.connection;
   } catch (err: any) {

@@ -89,8 +89,15 @@ export async function POST(req: Request) {
       accessToken: tokens.accessToken,
       refreshToken: tokens.refreshToken,
     });
-  } catch (err) {
+  } catch (err: any) {
     console.error("POST /api/auth/refresh error", err);
-    return new NextResponse("Server error", { status: 500 });
+    return NextResponse.json(
+      { 
+        error: "Server error", 
+        message: err?.message || String(err),
+        stack: process.env.NODE_ENV === "development" ? err?.stack : undefined
+      },
+      { status: 500 }
+    );
   }
 }
