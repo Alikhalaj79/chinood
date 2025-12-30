@@ -1,10 +1,33 @@
 import { NextResponse } from "next/server";
-import { getCatalog } from "../../lib/catalog";
+import { getCatalog, getCatalogPaginated } from "../../lib/catalog";
 import { verifyRequestAuth } from "../../lib/server-auth";
 import CatalogItemModel from "../../lib/models/CatalogItem";
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
+    const { searchParams } = new URL(req.url);
+    const pageParam = searchParams.get("page");
+    const limitParam = searchParams.get("limit");
+    const cardDirectionParam = searchParams.get("cardDirection") as
+      | "top-to-bottom"
+      | "bottom-to-top"
+      | null;
+
+    // If pagination params are provided, use paginated endpoint
+    if (pageParam || limitParam) {
+      const page = pageParam ? Math.max(1, parseInt(pageParam, 10)) : 1;
+      const limit = limitParam
+        ? Math.max(1, Math.min(50, parseInt(limitParam, 10)))
+        : 10;
+      const cardDirection =
+        cardDirectionParam === "bottom-to-top"
+          ? "bottom-to-top"
+          : "top-to-bottom";
+      const result = await getCatalogPaginated(page, limit, cardDirection);
+      return NextResponse.json(result);
+    }
+
+    // Otherwise, return all items (for backward compatibility)
     const items = await getCatalog();
     return NextResponse.json(items);
   } catch (err) {

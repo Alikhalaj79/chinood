@@ -40,11 +40,35 @@ export default function CatalogCard({ item, getImageUrl }: CatalogCardProps) {
   const [imageLoading, setImageLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
 
-  // Reset loading state when imageUrl changes
+  // Reset loading state when imageUrl changes and check if image is already loaded
   useEffect(() => {
     if (imageUrl) {
       setImageLoading(true);
       setImageError(false);
+      
+      // Check if image is already loaded in browser cache
+      const img = new Image();
+      
+      // Set up event handlers before setting src
+      img.onload = () => {
+        // Image is loaded (either from cache or network)
+        setImageLoading(false);
+        setImageError(false);
+      };
+      img.onerror = () => {
+        setImageLoading(false);
+        setImageError(true);
+      };
+      
+      // Set src after handlers are set up
+      img.src = imageUrl;
+      
+      // If image is already complete (cached), trigger onload immediately
+      // This handles the case where image is already in browser cache
+      if (img.complete && img.naturalWidth > 0) {
+        setImageLoading(false);
+        setImageError(false);
+      }
     } else {
       setImageLoading(false);
       setImageError(false);
@@ -69,7 +93,14 @@ export default function CatalogCard({ item, getImageUrl }: CatalogCardProps) {
                 imageLoading ? "opacity-0" : "opacity-100"
               }`}
               loading="lazy"
-              onLoad={() => setImageLoading(false)}
+              onLoad={(e) => {
+                // Check if image is actually loaded
+                const img = e.currentTarget;
+                if (img.complete && img.naturalWidth > 0) {
+                  setImageLoading(false);
+                  setImageError(false);
+                }
+              }}
               onError={() => {
                 setImageLoading(false);
                 setImageError(true);
@@ -142,7 +173,14 @@ export default function CatalogCard({ item, getImageUrl }: CatalogCardProps) {
                     imageLoading ? "opacity-0" : "opacity-100"
                   }`}
                   loading="lazy"
-                  onLoad={() => setImageLoading(false)}
+                  onLoad={(e) => {
+                    // Check if image is actually loaded
+                    const img = e.currentTarget;
+                    if (img.complete && img.naturalWidth > 0) {
+                      setImageLoading(false);
+                      setImageError(false);
+                    }
+                  }}
                   onError={() => {
                     setImageLoading(false);
                     setImageError(true);
@@ -189,7 +227,14 @@ export default function CatalogCard({ item, getImageUrl }: CatalogCardProps) {
                     imageLoading ? "opacity-0" : "opacity-100"
                   }`}
                   loading="lazy"
-                  onLoad={() => setImageLoading(false)}
+                  onLoad={(e) => {
+                    // Check if image is actually loaded
+                    const img = e.currentTarget;
+                    if (img.complete && img.naturalWidth > 0) {
+                      setImageLoading(false);
+                      setImageError(false);
+                    }
+                  }}
                   onError={() => {
                     setImageLoading(false);
                     setImageError(true);
@@ -247,7 +292,14 @@ export default function CatalogCard({ item, getImageUrl }: CatalogCardProps) {
               imageLoading ? "opacity-0" : "opacity-100"
             }`}
             loading="lazy"
-            onLoad={() => setImageLoading(false)}
+            onLoad={(e) => {
+              // Check if image is actually loaded
+              const img = e.currentTarget;
+              if (img.complete && img.naturalWidth > 0) {
+                setImageLoading(false);
+                setImageError(false);
+              }
+            }}
             onError={() => {
               setImageLoading(false);
               setImageError(true);

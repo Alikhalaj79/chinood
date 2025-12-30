@@ -6,24 +6,102 @@ import CatalogCard from "./CatalogCard";
 import CatalogCardSkeleton, {
   CatalogCardSkeletonHorizontal,
 } from "./CatalogCardSkeleton";
+import Pagination from "./admin/Pagination";
 
 export default function CatalogGrid() {
   const [items, setItems] = useState<CatalogDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(7); // Default, will be loaded from settings
+  const [totalItems, setTotalItems] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [cardDirection, setCardDirection] = useState<
+    "top-to-bottom" | "bottom-to-top"
+  >("top-to-bottom");
+
+  // Load settings on mount
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const res = await fetch("/api/settings");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.itemsPerPage) {
+            setItemsPerPage(data.itemsPerPage);
+          }
+          if (data.cardDirection) {
+            setCardDirection(data.cardDirection);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load settings", err);
+        // Continue with defaults if settings fail
+      }
+    };
+    fetchSettings();
+  }, []);
+
+  // Reset to page 1 when itemsPerPage changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [itemsPerPage]);
+
+  // Listen for settings updates from other tabs/pages
+  useEffect(() => {
+    if (typeof BroadcastChannel !== "undefined") {
+      const channel = new BroadcastChannel("settings-updates");
+      channel.onmessage = async () => {
+        // Reload settings when updated in another tab
+        try {
+          const res = await fetch("/api/settings");
+          if (res.ok) {
+            const data = await res.json();
+            if (data.itemsPerPage) {
+              setItemsPerPage(data.itemsPerPage);
+            }
+            if (data.cardDirection) {
+              setCardDirection(data.cardDirection);
+            }
+          }
+        } catch (err) {
+          console.error("Failed to reload settings", err);
+        }
+      };
+      return () => channel.close();
+    }
+  }, []);
 
   useEffect(() => {
     const fetchItems = async () => {
       try {
         setLoading(true);
         setError(null);
-        const res = await fetch("/api/catalog");
+        const res = await fetch(
+          `/api/catalog?page=${currentPage}&limit=${itemsPerPage}&cardDirection=${cardDirection}`
+        );
         if (!res.ok) {
           const errorText = await res.text();
           throw new Error(errorText || "خطا در بارگذاری کاتالوگ");
         }
         const data = await res.json();
-        setItems(data);
+        
+        // Check if response has pagination structure or is array (backward compatibility)
+        if (data.items && typeof data.total === "number") {
+          // Paginated response - items are already sorted by API based on cardDirection
+          setItems(data.items);
+          setTotalItems(data.total);
+          setTotalPages(data.totalPages);
+        } else if (Array.isArray(data)) {
+          // Legacy response (all items)
+          setItems(data);
+          setTotalItems(data.length);
+          setTotalPages(Math.ceil(data.length / itemsPerPage));
+        } else {
+          throw new Error("فرمت پاسخ نامعتبر است");
+        }
+        // Scroll to top when page changes
+        window.scrollTo({ top: 0, behavior: "smooth" });
       } catch (err) {
         console.error("Failed to load catalog", err);
         setError(
@@ -36,7 +114,7 @@ export default function CatalogGrid() {
       }
     };
     fetchItems();
-  }, []);
+  }, [currentPage, itemsPerPage, cardDirection]);
 
   const getImageUrl = (item: CatalogDTO) => {
     // Always use the images endpoint for better performance
@@ -90,16 +168,27 @@ export default function CatalogGrid() {
   }
 
   return (
-    <div className="flex flex-col w-full gap-8 md:gap-12">
-      {items.map((item, index) => (
-        <div
-          key={item.id}
-          className="w-full animate-fade-in-up"
-          style={{ animationDelay: `${index * 0.1}s` }}
-        >
-          <CatalogCard item={item} getImageUrl={getImageUrl} />
-        </div>
-      ))}
+    <div className="flex flex-col w-full">
+      <div className="flex flex-col w-full gap-8 md:gap-12">
+        {items.map((item, index) => (
+          <div
+            key={item.id}
+            className="w-full animate-fade-in-up"
+            style={{ animationDelay: `${index * 0.1}s` }}
+          >
+            <CatalogCard item={item} getImageUrl={getImageUrl} />
+          </div>
+        ))}
+      </div>
+      {totalPages > 1 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          itemsPerPage={itemsPerPage}
+          totalItems={totalItems}
+        />
+      )}
     </div>
   );
 }
