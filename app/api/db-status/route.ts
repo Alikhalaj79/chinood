@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "../../../api/data/index.js";
+import mongoose from "mongoose";
 
 export async function GET() {
   if (!process.env.MONGODB_URI) {
@@ -9,20 +10,16 @@ export async function GET() {
     );
   }
   try {
-    const conn = await connectDB();
+    await connectDB();
 
-    // conn may return mongoose connection object; attempt to get db info
-    const isConnected =
-      !!(conn && conn.connection) || !!(conn && conn.readyState !== undefined);
+    // Use mongoose.connection directly which is always available after connectDB()
+    const isConnected = mongoose.connection.readyState === 1;
+    
     let dbName = null;
     try {
-      dbName =
-        conn &&
-        conn.connection &&
-        conn.connection.db &&
-        conn.connection.db.databaseName;
-      if (!dbName && conn && conn.db && conn.db.databaseName)
-        dbName = conn.db.databaseName;
+      if (mongoose.connection.db) {
+        dbName = mongoose.connection.db.databaseName;
+      }
     } catch (err) {
       // ignore
     }
