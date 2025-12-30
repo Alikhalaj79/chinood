@@ -341,10 +341,9 @@ export default function AdminDashboard() {
   };
 
   const getImageUrl = (item: CatalogDTO) => {
-    if (item.image) {
-      if (item.imageMimeType) {
-        return `data:${item.imageMimeType};base64,${item.image}`;
-      }
+    // Always use the images endpoint for better performance
+    // The catalog API no longer includes base64 image data
+    if (item.imageMimeType) {
       return `/api/images/${item.id}`;
     }
     return null;
@@ -358,7 +357,7 @@ export default function AdminDashboard() {
     setImageFile(null);
     setRemoveImage(false);
     const imageUrl = getImageUrl(item);
-    const hasImage = !!item.image;
+    const hasImage = !!item.imageMimeType;
     setHasOriginalImage(hasImage);
     if (imageUrl) {
       setImagePreview(imageUrl);
@@ -639,21 +638,21 @@ export default function AdminDashboard() {
                         id: "preview",
                         title: title || "عنوان نمونه",
                         description: description || "توضیحات نمونه",
-                        image:
-                          removeImage || !imagePreview
-                            ? undefined
-                            : imagePreview.split(",")[1],
+                        image: undefined, // Don't include base64 data
                         imageMimeType:
                           removeImage || !imagePreview
                             ? undefined
-                            : imagePreview.split(";")[0].split(":")[1],
+                            : imagePreview.startsWith("data:")
+                            ? imagePreview.split(";")[0].split(":")[1]
+                            : "image/jpeg", // For endpoint URLs, we don't need exact mimeType
                         itemViewType: itemViewType,
                       }}
                       getImageUrl={(item) => {
-                        if (item.image && item.imageMimeType) {
-                          return `data:${item.imageMimeType};base64,${item.image}`;
+                        if (removeImage || !imagePreview) {
+                          return null;
                         }
-                        return null;
+                        // Use imagePreview directly (works for both data URLs and endpoint URLs)
+                        return imagePreview;
                       }}
                     />
                   </div>
