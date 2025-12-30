@@ -27,7 +27,6 @@ export async function connectDB() {
   try {
     // Disable buffering to prevent timeout errors
     mongoose.set("bufferCommands", false);
-    mongoose.set("bufferMaxEntries", 0);
     
     await mongoose.connect(uri, {
       serverSelectionTimeoutMS: 30000, // 30 seconds for production
