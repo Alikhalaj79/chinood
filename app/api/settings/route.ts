@@ -25,9 +25,16 @@ export async function GET() {
       cardDirection: settings.cardDirection || "top-to-bottom",
       itemsPerPage: settings.itemsPerPage || 7,
     });
-  } catch (err) {
+  } catch (err: any) {
     console.error("GET /api/settings error", err);
-    return new NextResponse("Server error", { status: 500 });
+    return NextResponse.json(
+      { 
+        error: "Server error", 
+        message: err?.message || String(err),
+        stack: process.env.NODE_ENV === "development" ? err?.stack : undefined
+      },
+      { status: 500 }
+    );
   }
 }
 
@@ -73,8 +80,15 @@ export async function PUT(req: Request) {
       cardDirection: settings.cardDirection,
       itemsPerPage: settings.itemsPerPage,
     });
-  } catch (err) {
+  } catch (err: any) {
     console.error("PUT /api/settings error", err);
-    return new NextResponse("Server error", { status: 500 });
+    return NextResponse.json(
+      { 
+        error: "Server error", 
+        message: err?.message || String(err),
+        stack: process.env.NODE_ENV === "development" ? err?.stack : undefined
+      },
+      { status: 500 }
+    );
   }
 }

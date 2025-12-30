@@ -30,9 +30,16 @@ export async function GET(req: Request) {
     // Otherwise, return all items (for backward compatibility)
     const items = await getCatalog();
     return NextResponse.json(items);
-  } catch (err) {
+  } catch (err: any) {
     console.error("GET /api/catalog error", err);
-    return new NextResponse("Server error", { status: 500 });
+    return NextResponse.json(
+      { 
+        error: "Server error", 
+        message: err?.message || String(err),
+        stack: process.env.NODE_ENV === "development" ? err?.stack : undefined
+      },
+      { status: 500 }
+    );
   }
 }
 
@@ -93,8 +100,15 @@ export async function POST(req: Request) {
     });
 
     return new NextResponse("Created", { status: 201 });
-  } catch (err) {
+  } catch (err: any) {
     console.error("POST /api/catalog error", err);
-    return new NextResponse("Server error", { status: 500 });
+    return NextResponse.json(
+      { 
+        error: "Server error", 
+        message: err?.message || String(err),
+        stack: process.env.NODE_ENV === "development" ? err?.stack : undefined
+      },
+      { status: 500 }
+    );
   }
 }

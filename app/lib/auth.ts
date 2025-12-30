@@ -8,8 +8,8 @@ import { connectDB } from "./db";
 const JWT_SECRET = process.env.JWT_SECRET || "dev-secret";
 const JWT_REFRESH_SECRET =
   process.env.JWT_REFRESH_SECRET || "dev-refresh-secret";
-const ADMIN_USERNAME = process.env.ADMIN_USERNAME ;
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ;
+const ADMIN_USERNAME = process.env.ADMIN_USERNAME?.trim();
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD?.trim();
 
 // Access token expires in 15 minutes
 const ACCESS_TOKEN_EXPIRY = "15m";
